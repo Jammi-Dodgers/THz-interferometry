@@ -1,41 +1,30 @@
 import numpy as np
 from PIL import Image
 import pandas as pd
-import os, re, sys
-from scipy import interpolate as sciinter, signal as scisig, optimize as sciopt, ndimage as sciimage, constants as spcon #scipy has a lot of submodules
+import os, re
+from scipy import interpolate as spinter, signal as spsig, optimize as spopt, constants as spcon #scipy has a lot of submodules
 from astropy.io import fits
 
 C = spcon.speed_of_light
 
 ##############GENERIC AND BASIC FUNCTIONS##############
 
-def none2zero(x): #x should be an interger or None
-    return int(x or bool(x)) #a simple if statement would work best but I think this is cooler.
-
 def line(x,A,B):
     return A + B*x
-     
-def cubic(x,A,B,C,D):
-     return A + B*x + C*x**2 + D*x**3
-
-def cubic_residuals(x, y, A, B, C, D):
-    return cubic(x, A, B, C, D) - y
 
 def recip(x):
     return C*1e-6 / x #converts um to THz or vice versa. #1e4 / x # converts um to cm^-1 or vice versa. 
-
-def format_ticks(x, pos):
-    return f"{x:.1f}"  # Format the tick label with two decimal places
 
 
 ############FILE ORGANISATION FUNCTIONS#################
 
 def find_fringes_files(colour, number, file_type):
+    regex_code = "^{0:}_fringes{1:d}_*[0-9]*{2:}".format(colour, number, file_type)
     file_names = os.listdir("data\\")
     new_file_names=[]
     new_file_numbers=[]
     for file_name in file_names:
-        check = re.findall('^'+colour+'_fringes'+number+'_*[0-9]*'+file_type , file_name)
+        check = re.findall(regex_code, file_name)
 
         if len(check) != 0:
             new_file_names = new_file_names + [file_name]
@@ -50,6 +39,7 @@ def find_fringes_files(colour, number, file_type):
     return df["file names"], df["file numbers"]
 
 def combine_fringes_arrays(file_names, file_type):
+
     if file_type == ".tif" or file_type == ".tiff":
         im = Image.open('data\\'+file_names[0]) #for the first interferogram
         if im.mode == 'RGB': #The purple camera has colour channels dispite it being monochromatic.
@@ -87,42 +77,47 @@ def combine_fringes_arrays(file_names, file_type):
     return angles  
 
 def import_standard_photo(colour, number, file_type): #It would be nice to combine import_standard_photo and combine_fringes_arrays into a single function. They do basically the same thing.
+    number = int(number)
+    beamA_file_name = "data\\{0:}_BA{1:d}{2:}".format(colour, number, file_type)
+    beamB_file_name = "data\\{0:}_BB{1:d}{2:}".format(colour, number, file_type)
+    background_file_name = "data\\{0:}_bg{1:d}{2:}".format(colour, number, file_type)
+
     if file_type == ".tif" or file_type == ".tiff":
-        im = Image.open('data\\'+colour+'_BA'+number+file_type)
+        im = Image.open(beamA_file_name)
         if im.mode == 'RGB': #The purple camera has colour channels dispite it being monochromatic.
             im = im.split()[0]
         beamA = np.array(im, dtype= np.float32)
         im.close()
-        im = Image.open('data\\'+colour+'_BB'+number+file_type)
+        im = Image.open(beamB_file_name)
         if im.mode == 'RGB':
             im = im.split()[0]
         beamB = np.array(im, dtype= np.float32)
         im.close()
-        im = Image.open('data\\'+colour+'_bg'+number+file_type)
+        im = Image.open(background_file_name)
         if im.mode == 'RGB':
             im = im.split()[0]
         background = np.array(im, dtype= np.float32)
         im.close()
 
     if file_type == ".csv":
-        with open('data\\'+colour+'_BA'+number+file_type, 'r') as file: #openai did this bit for me. It automatically detects which delimiter to use (pyro uses , xeva uses ;)
+        with open(beamA_file_name, 'r') as file: #openai did this bit for me. It automatically detects which delimiter to use (pyro uses , xeva uses ;)
             first_line = file.readline()
             if ';' in first_line:
                 delimiter = ';'
             else:
                 delimiter = ','
-        beamA = np.genfromtxt('data\\'+colour+'_BA'+number+file_type, delimiter= delimiter, filling_values= 0)
-        beamB = np.genfromtxt('data\\'+colour+'_BB'+number+file_type, delimiter= delimiter, filling_values= 0)
-        background = np.genfromtxt('data\\'+colour+'_bg'+number+file_type, delimiter= delimiter, filling_values= 0)
+        beamA = np.genfromtxt(beamA_file_name, delimiter= delimiter, filling_values= 0)
+        beamB = np.genfromtxt(beamB_file_name, delimiter= delimiter, filling_values= 0)
+        background = np.genfromtxt(background_file_name, delimiter= delimiter, filling_values= 0)
 
     if file_type == ".fts":
-        hdulist = fits.open('data\\'+colour+'_BA'+number+file_type,  ignore_missing_end=True)
+        hdulist = fits.open(beamA_file_name,  ignore_missing_end=True)
         beamA = np.array(hdulist[0].data)
         hdulist.close()
-        hdulist = fits.open('data\\'+colour+'_BB'+number+file_type,  ignore_missing_end=True)
+        hdulist = fits.open(beamB_file_name,  ignore_missing_end=True)
         beamB = np.array(hdulist[0].data)
         hdulist.close()
-        hdulist = fits.open('data\\'+colour+'_bg'+number+file_type,  ignore_missing_end=True)
+        hdulist = fits.open(background_file_name,  ignore_missing_end=True)
         background = np.array(hdulist[0].data)
         hdulist.close()
 
@@ -160,7 +155,7 @@ def dead_pixel_filter(interferogram, dead_pixels= 1):
     notdead = np.logical_and(interferogram <= np.percentile(interferogram,upper_percentile), interferogram >= np.percentile(interferogram,lower_percentile) )
     coords = np.mgrid[0:interferogram.shape[0], 0:interferogram.shape[1]]
     coords = np.moveaxis(coords, 0, -1) #refromat the array such that we have pairs of coordinates. ie. [[0,0],[0,1],[0,2]] ect.
-    nearest = sciinter.NearestNDInterpolator(coords[notdead], interferogram[notdead])
+    nearest = spinter.NearestNDInterpolator(coords[notdead], interferogram[notdead])
     interferogram = nearest(coords[:,:,0],coords[:,:,1])
 
     return interferogram
@@ -195,20 +190,20 @@ def average_interferogram(interferogram_2D):
 
 def find_best_peak(interferograms, height=None, threshold=None, distance=None, width=None, wlen=None, rel_height=0.5, plateau_size=None):
     if interferograms.ndim == 1:
-        peaks, peaks_properties = scisig.find_peaks(interferograms, height=height, threshold=threshold, distance=distance, prominence=0, width=width, wlen=wlen, rel_height=rel_height, plateau_size=plateau_size)
+        peaks, peaks_properties = spsig.find_peaks(interferograms, height=height, threshold=threshold, distance=distance, prominence=0, width=width, wlen=wlen, rel_height=rel_height, plateau_size=plateau_size)
         best_peak_index = np.argmax(peaks_properties["prominences"])
         peak = peaks[best_peak_index]
         peak_properties = {key: value[best_peak_index] for key, value in peaks_properties.items()}
     
     elif interferograms.ndim == 2:
         interferograms = interferograms.transpose() #Use the right set of axes.
-        peaks, peaks_properties = scisig.find_peaks(interferograms[0], height=height, threshold=threshold, distance=distance, prominence=0, width=width, wlen=wlen, rel_height=rel_height, plateau_size=plateau_size)
+        peaks, peaks_properties = spsig.find_peaks(interferograms[0], height=height, threshold=threshold, distance=distance, prominence=0, width=width, wlen=wlen, rel_height=rel_height, plateau_size=plateau_size)
         best_peak_index = np.argmax(peaks_properties["prominences"])
         peak = [peaks[best_peak_index]]
         peak_properties = {key: [value[best_peak_index]] for key, value in peaks_properties.items()}
 
         for interferogram in interferograms[1:]:
-            peaks, peaks_properties = scisig.find_peaks(interferogram, height=height, threshold=threshold, distance=distance, prominence=0, width=width, wlen=wlen, rel_height=rel_height, plateau_size=plateau_size)
+            peaks, peaks_properties = spsig.find_peaks(interferogram, height=height, threshold=threshold, distance=distance, prominence=0, width=width, wlen=wlen, rel_height=rel_height, plateau_size=plateau_size)
             best_peak_index = np.argmax(peaks_properties["prominences"])
             peak = np.concatenate([peak, [peaks[best_peak_index]]])
             peak_properties = {key: peak_properties[key] +[value[best_peak_index]] for key, value in peaks_properties.items()}
@@ -296,10 +291,10 @@ def apodization(interferogram = None, max_index = None, function = None, L = Non
 def estimate_best_S2N(interferogram_averaged, fringe_width_estimate = 50):
     df = pd.DataFrame(interferogram_averaged, columns= ["interferogram"])
 
-    peak_index, peak_properties = scisig.find_peaks(df["interferogram"], height= -np.Infinity, distance= fringe_width_estimate)
+    peak_index, peak_properties = spsig.find_peaks(df["interferogram"], height= -np.Infinity, distance= fringe_width_estimate)
     df.loc[peak_index, "max"] = peak_properties["peak_heights"]
     df["max"].interpolate(inplace=True)
-    peak_index, peak_properties = scisig.find_peaks(-df["interferogram"], height= -np.Infinity, distance= fringe_width_estimate)
+    peak_index, peak_properties = spsig.find_peaks(-df["interferogram"], height= -np.Infinity, distance= fringe_width_estimate)
     df.loc[peak_index, "min"] = -peak_properties["peak_heights"]
     df["min"].interpolate(inplace=True)
 
@@ -320,7 +315,7 @@ def delay_line_angle(interferograms_averaged, interferograms_maximums, delay_lin
     all_peak_estimates = interferograms_maximums[delay_line_bounds[0]:delay_line_bounds[1]]
     time_delays = time_delay[delay_line_bounds[0]:delay_line_bounds[1]]
 
-    popt, pcov = sciopt.curve_fit(line, all_peak_estimates, time_delays)
+    popt, pcov = spopt.curve_fit(line, all_peak_estimates, time_delays)
 
     m = popt[1]
     m /= 1e9 *pixel_pitch #convert the gradient from fs/pixel to us/um (= s/m)
@@ -365,18 +360,18 @@ def angular_slice(phi, FT2ds, pixel_pitch): #THIS IS STILL KINDA RUBBISH. PLS IM
     grid_coords = (grid_y, grid_x)
 
     if FT2ds.ndim == 2:
-        interp = sciinter.RegularGridInterpolator(grid_coords, FT2ds, bounds_error= False, fill_value= 0)
+        interp = spinter.RegularGridInterpolator(grid_coords, FT2ds, bounds_error= False, fill_value= 0)
         FT1ds = interp(line_coords)
         FT1ds = FT1ds[~np.isnan(FT1ds)] #delete nan values
         sums = np.nansum(np.abs(FT1ds)) #np.sum should also be ok because the nans have been removed
 
     elif FT2ds.ndim == 3:
-        interp = sciinter.RegularGridInterpolator(grid_coords, FT2ds[0], bounds_error= False, fill_value= np.nan)
+        interp = spinter.RegularGridInterpolator(grid_coords, FT2ds[0], bounds_error= False, fill_value= np.nan)
         FT1ds = interp(line_coords)
         FT1ds = FT1ds[~np.isnan(FT1ds)] #delete nan values
         sums = np.nansum(np.abs(FT1ds)) #np.sum should also be ok because the nans have been removed
         for FT2d in FT2ds[1:]:
-            interp = sciinter.RegularGridInterpolator(grid_coords, FT2d, bounds_error= False, fill_value= np.nan)
+            interp = spinter.RegularGridInterpolator(grid_coords, FT2d, bounds_error= False, fill_value= np.nan)
             FT1d = interp(line_coords)
             sum = np.nansum(np.abs(FT1d)) #np.sum should also be ok because the nans have been removed
             FT1ds = np.hstack([FT1ds, FT1d])
@@ -412,12 +407,12 @@ def Coeffients2Amplitudes(FT, freqs):
 def FFT2D_slice_interferogram(interferogram2D, pixel_pitch):
     FT2d = np.fft.fftshift(np.fft.fft2(interferogram2D, norm= "forward"))
 
-    minimisation_results = sciopt.minimize(angular_intergral, x0= -1, args= (FT2d, pixel_pitch, -1), bounds= [[-np.pi/2, np.pi/2]]) #Assume that the fringes are vertical to within 45 degrees. This avoids the strong line at 90 and -90 degrees. (Where does this line come from?)
+    minimisation_results = spopt.minimize(angular_intergral, x0= -1, args= (FT2d, pixel_pitch, -1), bounds= [[-np.pi/2, np.pi/2]]) #Assume that the fringes are vertical to within 45 degrees. This avoids the strong line at 90 and -90 degrees. (Where does this line come from?)
     min_phi, min_intergral = minimisation_results.x, minimisation_results.fun
     _, FT1d, _ = angular_slice(min_phi, FT2d, pixel_pitch)
     interferogram1D = np.fft.ifft(np.fft.fftshift(FT1d), norm= "forward")
     
-    return interferogram1D, FT1d, FT2d, min_phi[0] #sciopt creates np.arrays
+    return interferogram1D, FT1d, FT2d, min_phi[0] #spopt creates np.arrays
 
 def spectralFFT(interferogram1D, theta= np.pi/6, pixel_pitch= 1):
 
