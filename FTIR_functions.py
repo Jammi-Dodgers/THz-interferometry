@@ -15,6 +15,11 @@ def line(x,A,B):
 def recip(x):
     return C*1e-6 / x #converts um to THz or vice versa. #1e4 / x # converts um to cm^-1 or vice versa. 
 
+def sinminutes(arcminutes): # Useful when theta is less than a degree.
+    return np.sin(np.deg2rad(arcminutes/60))
+
+def brange(start, step, num): #varient of np.arange
+    return start + np.arange(0, num) * step
 
 ############FILE ORGANISATION FUNCTIONS#################
 
@@ -323,10 +328,21 @@ def delay_line_angle(interferograms_averaged, interferograms_maximums, delay_lin
 
     return theta
 
+def recenter(interferogram): #moves the (positive) peak to the center. 
+    length = len(interferogram)
+    max_index = np.argmax(interferogram)
+    tau = length//2 -max_index
+
+    FT = np.fft.fft(interferogram)
+    freq = np.fft.fftfreq(length)
+    FT *= np.exp(-2j*np.pi*freq*tau)
+
+    interferogram = np.fft.ifft(FT)
+    return interferogram
 
 #################FFT FUNCTIONS#################
 
-def angular_slice(phi, FT2ds, pixel_pitch): #THIS IS STILL KINDA RUBBISH. PLS IMPROVE.
+def angular_slice(phi, FT2ds, pixel_pitch): #OLD SLICING FUNCTION
 
     angle_of_diagonal = np.tan(FT2ds.shape[0] / FT2ds.shape[1])
     n = phi // np.pi #We need the angle to be between -pi < phi < pi
@@ -379,9 +395,19 @@ def angular_slice(phi, FT2ds, pixel_pitch): #THIS IS STILL KINDA RUBBISH. PLS IM
 
     return sums, FT1ds, np.fft.fftshift(np.fft.fftfreq(number_of_samples, 1/niquist)) #line intergral (counts), line slice (counts), slice frequencies (pixels^-1)
 
-def angular_intergral(phi, FT2d, pixel_pitch, sign = 1): #function for scipy minimization
+def angular_intergral(phi, FT2d, pixel_pitch, sign = 1): #OLD SLICING FUNCTION
     sum ,_ ,_ = angular_slice(phi, FT2d, pixel_pitch)
     return sign *sum #I acually want the maximum so I set sign = -1
+
+def FFT2D_slice_interferogram(interferogram2D, pixel_pitch): #OLD SLICING FUNCTION
+    FT2d = np.fft.fftshift(np.fft.fft2(interferogram2D, norm= "forward"))
+
+    minimisation_results = spopt.minimize(angular_intergral, x0= -1, args= (FT2d, pixel_pitch, -1), bounds= [[-np.pi/2, np.pi/2]]) #Assume that the fringes are vertical to within 45 degrees. This avoids the strong line at 90 and -90 degrees. (Where does this line come from?)
+    min_phi, min_intergral = minimisation_results.x, minimisation_results.fun
+    _, FT1d, _ = angular_slice(min_phi, FT2d, pixel_pitch)
+    interferogram1D = np.fft.ifft(np.fft.fftshift(FT1d), norm= "forward")
+    
+    return interferogram1D, FT1d, FT2d, min_phi[0] #spopt creates np.arrays
 
 def Coeffients2Amplitudes(FT, freqs):
     samples = len(FT)
@@ -404,16 +430,6 @@ def Coeffients2Amplitudes(FT, freqs):
         wavelengths = 1/freqs
     return amplitude, wavelengths, freqs
 
-def FFT2D_slice_interferogram(interferogram2D, pixel_pitch):
-    FT2d = np.fft.fftshift(np.fft.fft2(interferogram2D, norm= "forward"))
-
-    minimisation_results = spopt.minimize(angular_intergral, x0= -1, args= (FT2d, pixel_pitch, -1), bounds= [[-np.pi/2, np.pi/2]]) #Assume that the fringes are vertical to within 45 degrees. This avoids the strong line at 90 and -90 degrees. (Where does this line come from?)
-    min_phi, min_intergral = minimisation_results.x, minimisation_results.fun
-    _, FT1d, _ = angular_slice(min_phi, FT2d, pixel_pitch)
-    interferogram1D = np.fft.ifft(np.fft.fftshift(FT1d), norm= "forward")
-    
-    return interferogram1D, FT1d, FT2d, min_phi[0] #spopt creates np.arrays
-
 def spectralFFT(interferogram1D, theta= np.pi/6, pixel_pitch= 1):
 
     FT = np.fft.fft(interferogram1D, norm = "forward")
@@ -426,3 +442,67 @@ def spectralFFT(interferogram1D, theta= np.pi/6, pixel_pitch= 1):
     amplitude = amplitude /np.nanmax(amplitude[:-1]) #normalise
     
     return amplitude, corrected_wavelengths, corrected_frequencys
+
+
+def slice_2d(interferogram2d, alpha): #NEW SLICING FUNCTION #assumes that the pixels are square
+    rows, columns = interferogram2d.shape
+
+    FT2d = np.fft.fftshift(np.fft.fft2(interferogram2d))
+    k_x = np.fft.fftshift(np.fft.fftfreq(columns)) #in pixels^-1
+    k_y = np.fft.fftshift(np.fft.fftfreq(rows))
+
+    x_intercepts, y_intercepts, _ = bounding_box((-0.5, 0.5), (-0.5, 0.5), (0,0), np.tan(alpha))
+    box_width, box_height = x_intercepts[1] -x_intercepts[0], y_intercepts[1] -y_intercepts[0]
+    sampling_frequency = np.hypot(box_width, box_height)
+    _, _, collisions = bounding_box((k_x[0], k_x[-1]), (k_y[0], k_y[-1]), (0,0), np.tan(alpha)) # Nearly the same as previous bounding box. (Does the small difference matter?)
+
+    if collisions[0] and collisions[1]: #floor to ceiling line
+        line_x = k_y /np.tan(alpha)
+        line_y = k_y
+    elif collisions[2] and collisions[3]: #left to right line
+        line_x = k_x
+        line_y = k_x *np.tan(alpha)
+    else:
+        collisions_lookup = np.array(["floor","ceiling","left","right"])
+        raise ValueError("This line with angle {0:.2f} reaches from {1:} to {2:}.".format(alpha, *collisions_lookup[collisions])) #This shouldn't be possible yet it has happened before! I think it can occor for diagonal lines from corner to corner.
+
+    linear_interpolation = spinter.RegularGridInterpolator((k_y, k_x), FT2d, bounds_error= False, fill_value= 0) # When trying to interpolate a value on the edge of the bounds, RegularGridInterpolator will throw an error for the upper bound but not the lower bound.
+
+    FT1d = linear_interpolation(list(zip(line_y, line_x)))
+    FT1d = np.fft.fftshift(FT1d)
+    interferogram1d = np.fft.ifft(FT1d)
+
+    displacement1d = brange(0, 1/sampling_frequency, len(interferogram1d))
+
+    return displacement1d, interferogram1d, FT1d
+
+def find_alpha(interferogram2d): #NEW SLICING FUNCTION
+    def to_minimise(alpha):
+        _, _, FT1d = slice_2d(interferogram2d, alpha)
+        return -np.sum(np.abs(FT1d))
+    
+    result = spopt.minimize_scalar(to_minimise, bounds= (-np.pi/2, np.pi/2), method= "bounded") #find the largest line intergral. Not reliable for noisy signals.
+
+    return result.x
+
+########### OTHER FUNCTIONS ###########
+
+def bounding_box(x_bounds, y_bounds, line_points, line_gradient): # collision detection function that finds the interception points between a line and a rectange.
+    x_bounds = np.sort(x_bounds)
+    y_bounds = np.sort(y_bounds)
+    line_points = np.array(line_points) #should be (x, y)
+
+    if line_gradient == 0:
+        return x_bounds, np.repeat(line_points[1], 2), [False, False, True, True]
+    #else:
+
+    x_intercepts = 1/line_gradient *(y_bounds -line_points[1]) +line_points[0] #find the points where the line intercepts the y limits (floor and ceiling)
+    is_x_intercept_within_bounds = np.logical_and(x_bounds[0] <= x_intercepts, x_intercepts <= x_bounds[1]) #does this point also lie within the x limits?
+    y_intercepts = line_gradient *(x_bounds -line_points[0]) +line_points[1] #find the points where the line intercepts the x limits (left and right sides)
+    is_y_intercept_within_bounds = np.logical_and(y_bounds[0] <= y_intercepts, y_intercepts <= y_bounds[1]) #does this point also lie within the y limits?
+
+    x_intercepts = np.concatenate((x_intercepts[is_x_intercept_within_bounds], x_bounds[is_y_intercept_within_bounds])) # [[intercept], [intercept], [left], [right],
+    y_intercepts = np.concatenate((y_bounds[is_x_intercept_within_bounds], y_intercepts[is_y_intercept_within_bounds])) #  [floor], [ceiling], [intercept], [intercept]]
+
+    collisions = np.concatenate([is_x_intercept_within_bounds, is_y_intercept_within_bounds])
+    return x_intercepts, y_intercepts, collisions # [floor, ceiling, left, right]
