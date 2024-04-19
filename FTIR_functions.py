@@ -21,6 +21,22 @@ def sinminutes(arcminutes): # Useful when theta is less than a degree.
 def brange(start, step, num): #varient of np.arange
     return start + np.arange(0, num) * step
 
+def flatten_list(bookshelf): # for when np.ravel() just won't cut it.
+    papers= []
+
+    if type(bookshelf) == str: #strings are iterable but should not be flattened
+        papers.append(bookshelf)
+        return papers #abort! strings are exempt from flattening
+
+    for book in list(bookshelf):
+        try:
+            book[0] # is this book indexable?
+        except: #This is not a list! Add this item to the papers. #Also why does numpy throw an IndexError whereas python throws a TypeError?!?
+            papers.append(book)
+        else:
+            papers += flatten_list(book) #This is a list! Its items must be seperated first, then it can be added to the papers.
+    return papers
+
 ############FILE ORGANISATION FUNCTIONS#################
 
 def find_fringes_files(colour, number, file_type):
@@ -223,29 +239,19 @@ def zero_pad(interferogram, zero_padding):
     interferogram = np.concatenate([interferogram, [interferogram[-1]] *int((zero_padding-1) *original_length //2)])
     return interferogram
 
-def apodization(interferogram = None, max_index = None, function = None, L = None, zero_padding = 1):
+def apodization(interferogram = None, max_index = None, function = None):
     if interferogram is None:
         interferogram = np.ones(1000) #This might seem a bit redundant but it is useful for viewing the apodization function. 
 
-    # Setting defult values of L and max_index
-    if L != None and max_index != None:
-        max_index += (zero_padding-1) *L //2 # because the interferogram has been extended, the max_index has changed.
-    elif L != None and max_index == None:
-        max_index = L//2 + (zero_padding-1) *L //2
-    elif L == None and max_index != None:
-        L = len(interferogram)
-    else: #L == None and max_index == None:
-        L = len(interferogram)
+    L = len(interferogram)
+    index = np.arange(0, L)
+    function = flatten_list(function)
+
+    if max_index == None:
         max_index = L//2
 
-    index = np.arange(0, len(interferogram)) # We need indexes if we want to apply apodization
-
-    if None in function:
+    if None in function or "box" in function:
         interferogram = interferogram # leave unchanged
-    if "box" in function:
-        box_function = [1 if i >= (zero_padding-1) *L //2 and i < (zero_padding+1) *L //2 else 0 for i in index] # apply boundries. interferogram is invalid in zero-padded regions.
-        box_function = np.array(box_function)
-        interferogram = interferogram * box_function
     if "crop" in function:
         is_positive, is_negative = interferogram>=0, interferogram<0
         becomes_negative = np.logical_and(is_negative, np.roll(is_positive, 1))
@@ -272,19 +278,19 @@ def apodization(interferogram = None, max_index = None, function = None, L = Non
         blackmann_harris_function = [blackmann_harris_function[i] if 2*(i-max_index)/L >= -1 and 2*(i-max_index)/L <= 1 else 0.0049 for i in index] #apply boundries. Only the first period of the cosine is valid.
         blackmann_harris_function = np.array(blackmann_harris_function)
         interferogram = interferogram * blackmann_harris_function
-    if "forward_ramp" in function:
+    if "forward ramp" in function:
         forward_ramp_function = (index -max_index)/L +0.5 #definition of function.
         forward_ramp_function = [0 if y < 0 else y for y in forward_ramp_function] #apply boundries. Values must be between 0 and 1.
         forward_ramp_function = [1 if y > 1 else y for y in forward_ramp_function] #apply boundries. Values must be between 0 and 1.
         forward_ramp_function = np.array(forward_ramp_function)
         interferogram = interferogram * forward_ramp_function
-    if "backward_ramp" in function:
+    if "backward ramp" in function:
         backward_ramp_function = (max_index -index)/L +0.5 #definition of function.
         backward_ramp_function = [0 if y < 0 else y for y in backward_ramp_function] #apply boundries. Values must be between 0 and 1.
         backward_ramp_function = [1 if y > 1 else y for y in backward_ramp_function] #apply boundries. Values must be between 0 and 1.
         backward_ramp_function = np.array(backward_ramp_function)
         interferogram = interferogram * backward_ramp_function
-    if "high_pass" in function: #I'm stretching the definition of apodization here
+    if "high pass" in function: #I'm stretching the definition of apodization here
         FFT = np.fft.fft(interferogram, norm = "forward")
         threshold = len(FFT) //100
         FFT2 = np.zeros(FFT.shape, dtype= np.complex128)
@@ -409,7 +415,15 @@ def FFT2D_slice_interferogram(interferogram2D, pixel_pitch): #OLD SLICING FUNCTI
     
     return interferogram1D, FT1d, FT2d, min_phi[0] #spopt creates np.arrays
 
-def Coeffients2Amplitudes(FT, freqs):
+def power_spectrum_FT(interferogram, theta, pixel_pitch): # NEW FOURIER TRANSFORM MEATHOD
+    FFT = np.fft.rfft(interferogram)
+    FFT = np.abs(FFT) #technically, I should square this for the power spectrum but it's fine as it is.
+    wavenumber = np.fft.rfftfreq(len(interferogram), 2*pixel_pitch*1e-6*sinminutes(theta)) # in m^-1
+    frequency = C*wavenumber #in Hz
+
+    return FFT, frequency
+
+def Coeffients2Amplitudes(FT, freqs): # OLD FOURIER TRANSFORM MEATHOD
     samples = len(FT)
     num_of_freqs = len(FT)//2 +1
     amplitude = np.zeros(num_of_freqs)
@@ -430,7 +444,7 @@ def Coeffients2Amplitudes(FT, freqs):
         wavelengths = 1/freqs
     return amplitude, wavelengths, freqs
 
-def spectralFFT(interferogram1D, theta= np.pi/6, pixel_pitch= 1):
+def spectralFFT(interferogram1D, theta= np.pi/6, pixel_pitch= 1): #OLD FOURIER TRANSFORM MEATHOD
 
     FT = np.fft.fft(interferogram1D, norm = "forward")
     freqs = np.fft.fftfreq(len(FT), pixel_pitch)
@@ -451,9 +465,6 @@ def slice_2d(interferogram2d, alpha): #NEW SLICING FUNCTION #assumes that the pi
     k_x = np.fft.fftshift(np.fft.fftfreq(columns)) #in pixels^-1
     k_y = np.fft.fftshift(np.fft.fftfreq(rows))
 
-    x_intercepts, y_intercepts, _ = bounding_box((-0.5, 0.5), (-0.5, 0.5), (0,0), np.tan(alpha))
-    box_width, box_height = x_intercepts[1] -x_intercepts[0], y_intercepts[1] -y_intercepts[0]
-    sampling_frequency = np.hypot(box_width, box_height)
     _, _, collisions = bounding_box((k_x[0], k_x[-1]), (k_y[0], k_y[-1]), (0,0), np.tan(alpha)) # Nearly the same as previous bounding box. (Does the small difference matter?)
 
     if collisions[0] and collisions[1]: #floor to ceiling line
@@ -472,13 +483,11 @@ def slice_2d(interferogram2d, alpha): #NEW SLICING FUNCTION #assumes that the pi
     FT1d = np.fft.fftshift(FT1d)
     interferogram1d = np.fft.ifft(FT1d)
 
-    displacement1d = brange(0, 1/sampling_frequency, len(interferogram1d))
-
-    return displacement1d, interferogram1d, FT1d
+    return interferogram1d, FT1d
 
 def find_alpha(interferogram2d): #NEW SLICING FUNCTION
     def to_minimise(alpha):
-        _, _, FT1d = slice_2d(interferogram2d, alpha)
+        _, FT1d = slice_2d(interferogram2d, alpha)
         return -np.sum(np.abs(FT1d))
     
     result = spopt.minimize_scalar(to_minimise, bounds= (-np.pi/2, np.pi/2), method= "bounded") #find the largest line intergral. Not reliable for noisy signals.
