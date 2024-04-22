@@ -296,6 +296,7 @@ def apodization(interferogram = None, max_index = None, function = None):
         FFT2 = np.zeros(FFT.shape, dtype= np.complex128)
         FFT2[threshold:-threshold] = FFT[threshold:-threshold]
         interferogram= np.fft.ifft(FFT2, norm = "forward").real
+    # trapizoid is another good one
 
     return interferogram
 
@@ -465,30 +466,37 @@ def slice_2d(interferogram2d, alpha): #NEW SLICING FUNCTION #assumes that the pi
     k_x = np.fft.fftshift(np.fft.fftfreq(columns)) #in pixels^-1
     k_y = np.fft.fftshift(np.fft.fftfreq(rows))
 
-    _, _, collisions = bounding_box((k_x[0], k_x[-1]), (k_y[0], k_y[-1]), (0,0), np.tan(alpha)) # Nearly the same as previous bounding box. (Does the small difference matter?)
+    x_intercepts, y_intercepts, collisions = bounding_box((0, columns), (0, rows), (columns/2,rows/2), np.tan(alpha))
+    x_length, y_length = x_intercepts[1] -x_intercepts[0], y_intercepts[1] -y_intercepts[0]
+    path_length = np.hypot(x_length, y_length)
+    sampling_frequency = 1 /path_length
 
-    if collisions[0] and collisions[1]: #floor to ceiling line
-        line_x = k_y /np.tan(alpha)
-        line_y = k_y
-    elif collisions[2] and collisions[3]: #left to right line
-        line_x = k_x
-        line_y = k_x *np.tan(alpha)
-    else:
-        collisions_lookup = np.array(["floor","ceiling","left","right"])
-        raise ValueError("This line with angle {0:.2f} reaches from {1:} to {2:}.".format(alpha, *collisions_lookup[collisions])) #This shouldn't be possible yet it has happened before! I think it can occor for diagonal lines from corner to corner.
+    kx_intercepts, ky_intercepts, collisions = bounding_box((k_x[0], k_x[-1]), (k_y[0], k_y[-1]), (0,0), np.tan(alpha))
+    kmax_lower, kmax_upper = np.hypot(kx_intercepts, ky_intercepts)
+    n_lower, n_upper = kmax_lower//sampling_frequency +1, kmax_upper//sampling_frequency +1
 
-    linear_interpolation = spinter.RegularGridInterpolator((k_y, k_x), FT2d, bounds_error= False, fill_value= 0) # When trying to interpolate a value on the edge of the bounds, RegularGridInterpolator will throw an error for the upper bound but not the lower bound.
+    line_kr_lower, line_kr_upper = brange(0, -sampling_frequency, n_lower), brange(0, sampling_frequency, n_upper)
+    line_kr = np.unique(flatten_list([line_kr_lower, line_kr_upper]))
 
-    FT1d = linear_interpolation(list(zip(line_y, line_x)))
+    line_kx = line_kr *np.cos(alpha)
+    line_ky = line_kr *np.sin(alpha)
+
+    linear_interpolation = spinter.RegularGridInterpolator((k_y, k_x), FT2d, bounds_error= False, fill_value= 0, method= "linear") # When trying to interpolate a value on the edge of the bounds, RegularGridInterpolator will throw an error for the upper bound but not the lower bound.
+
+    FT1d = linear_interpolation(list(zip(line_ky, line_kx)))
     FT1d = np.fft.fftshift(FT1d)
     interferogram1d = np.fft.ifft(FT1d)
 
-    return interferogram1d, FT1d
+    kr_nyqist = np.max([kmax_lower, kmax_upper]) #SHOULD ALWAYS BE THE LOWER ONE. ffts always put the nyquist frequency as negative
+    dr = 0.5/kr_nyqist
+    r = brange(0, dr, len(interferogram1d))
+
+    return r, interferogram1d, FT1d
 
 def find_alpha(interferogram2d): #NEW SLICING FUNCTION
     def to_minimise(alpha):
-        _, FT1d = slice_2d(interferogram2d, alpha)
-        return -np.sum(np.abs(FT1d))
+        _, _, FT1d = slice_2d(interferogram2d, alpha)
+        return -np.mean(np.abs(FT1d))
     
     result = spopt.minimize_scalar(to_minimise, bounds= (-np.pi/2, np.pi/2), method= "bounded") #find the largest line intergral. Not reliable for noisy signals.
 
@@ -496,7 +504,7 @@ def find_alpha(interferogram2d): #NEW SLICING FUNCTION
 
 ########### OTHER FUNCTIONS ###########
 
-def bounding_box(x_bounds, y_bounds, line_points, line_gradient): # collision detection function that finds the interception points between a line and a rectange.
+def bounding_box(x_bounds, y_bounds, line_points, line_gradient): # collision detection function that finds the interception points between a line and a rectangle.
     x_bounds = np.sort(x_bounds)
     y_bounds = np.sort(y_bounds)
     line_points = np.array(line_points) #should be (x, y)
