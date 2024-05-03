@@ -15,6 +15,9 @@ def line(x,A,B):
 def recip(x):
     return C*1e-6 / x #converts um to THz or vice versa. #1e4 / x # converts um to cm^-1 or vice versa. 
 
+def format_ticks(x, pos): # This function is compatable with matplotlib.ticker.FuncFormatter()
+    return f"{x:.1f}"  # Format the tick label with one decimal place
+
 def sinminutes(arcminutes): # Useful when theta is less than a degree.
     return np.sin(np.deg2rad(arcminutes/60))
 
