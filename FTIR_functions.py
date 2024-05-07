@@ -12,6 +12,11 @@ C = spcon.speed_of_light
 def line(x,A,B):
     return A + B*x
 
+def gaussian(x, center, FWHM):
+    sigma = (8 *np.log(2))**-0.5 *FWHM
+    exponent = -(1/2) *(x -center)**2 /(sigma**2)
+    return np.exp(exponent)
+
 def recip(x):
     return C*1e-6 / x #converts um to THz or vice versa. #1e4 / x # converts um to cm^-1 or vice versa. 
 
@@ -526,3 +531,51 @@ def bounding_box(x_bounds, y_bounds, line_points, line_gradient): # collision de
 
     collisions = np.concatenate([is_x_intercept_within_bounds, is_y_intercept_within_bounds])
     return x_intercepts, y_intercepts, collisions # [floor, ceiling, left, right]
+
+def lim(function, target, l0, r0): #finds the limit of a function.
+    converging = True
+
+    while converging:
+        l1, r1 = np.mean([l0, target]), np.mean([r0, target]) # Half the difference between the left/right hand value and the target
+        l2, r2 = np.mean([l1, target]), np.mean([r1, target])
+
+        fl0, fr0 = function(l0), function(r0)
+        fl1, fr1 = function(l1), function(r2)
+        fl2, fr2 = function(l2), function(r2)
+
+        delta_l0, delta_r0 = np.abs(fl1 -fl0), np.abs(fr1 -fr0)
+        delta_l1, delta_r1 = np.abs(fl2 -fl1), np.abs(fr2 -fr1)
+
+        if delta_l1 < delta_l0 and delta_r1 < delta_r0: #limit is converging :)
+            l0, r0 = l1, r1
+        else: #limit is diverging >:(. This is assumed to be a numerical error rather than a mathematical property of the function.
+            converging = False
+
+    return np.mean([fl0, fr0]) #Given that the limit converges, it should lie somewhere between the left and right hand limits.
+
+def kramers_kronig(omega, rho): # omega is the angular frequency. rho is the absolute part of the spectrum. (square root of the power spectrum)
+    assert len(omega) == len(rho), "All values in the function must have a corrisponding frequency."
+    N = len(omega)
+
+    sort = np.argsort(omega)
+    unsort = np.argsort(sort)
+    delta_omega = np.diff(omega[sort], append= 2*omega[sort][-1] -omega[sort][-2]) # Extrapolate the last value.
+    delta_omega = delta_omega[unsort] # When approximatating an intergral to the sum of many rectangles, we must find the area by multiplying by the width of the rectangles.
+
+    summation = np.zeros(N)
+    integrand = np.zeros(N)
+
+    for x, dx, rho_x, n in zip(omega, delta_omega, rho, np.arange(N)):
+        numerator = -omega *np.log(rho_x /rho)
+        denominator = omega**2 -x**2
+        integrand= numerator/denominator
+
+        ###### SOLVING LIMIT #####
+        rho_func = lambda y: np.interp(y, omega, rho)
+        integrand_func = lambda y: -x *np.log(rho_func(y)/rho_x) /(x**2 -y**2) # I have used x as the frequency and y as the integral variable. (instead of omega and x)
+
+        integrand[n] = lim(integrand_func, x, x-dx, x+dx)
+
+        summation += integrand *dx
+
+    return 2/np.pi *summation #phase
