@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>953</width>
-    <height>617</height>
+    <width>1092</width>
+    <height>677</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,6 +30,26 @@
        <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,2">
         <item>
          <layout class="QGridLayout" name="grid_2d_info">
+          <item row="11" column="1">
+           <widget class="QLineEdit" name="lineedit_2d_savefringes"/>
+          </item>
+          <item row="11" column="0">
+           <widget class="QPushButton" name="button_2d_savefringes">
+            <property name="text">
+             <string>Save 1D interferogram</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="0">
+           <widget class="QPushButton" name="button_2d_saveimage">
+            <property name="text">
+             <string>Save 2D Image</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="1">
+           <widget class="QLineEdit" name="lineedit_2d_saveimage"/>
+          </item>
           <item row="1" column="0">
            <widget class="QPushButton" name="button_2d_loadimage">
             <property name="text">
@@ -37,76 +57,8 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="1">
-           <widget class="QLineEdit" name="lineedit_2d_badfilter"/>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="lineedit_2d_loadimage"/>
-          </item>
-          <item row="2" column="0">
-           <widget class="QPushButton" name="button_2d_loadbg">
-            <property name="text">
-             <string>Load Background</string>
-            </property>
-           </widget>
-          </item>
-          <item row="9" column="0">
-           <widget class="QPushButton" name="button_2d_saveimage">
-            <property name="text">
-             <string>Save 2D Image</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="0">
-           <widget class="QPushButton" name="button_2d_badfilter">
-            <property name="text">
-             <string>Filter bad pixels</string>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="0" colspan="2">
-           <widget class="QLabel" name="label_2d_progress">
-            <property name="text">
-             <string>Collapse into 1d</string>
-            </property>
-           </widget>
-          </item>
-          <item row="10" column="0">
-           <widget class="QPushButton" name="button_2d_savefringes">
-            <property name="text">
-             <string>Save 1D interferogram</string>
-            </property>
-           </widget>
-          </item>
-          <item row="8" column="0" colspan="2">
-           <widget class="QLabel" name="label_2d_save">
-            <property name="text">
-             <string>Save processed data</string>
-            </property>
-           </widget>
-          </item>
           <item row="2" column="1">
            <widget class="QLineEdit" name="lineedit_2d_loadbg"/>
-          </item>
-          <item row="3" column="0" colspan="2">
-           <widget class="QLabel" name="label_2d_process">
-            <property name="text">
-             <string>Process image</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="0">
-           <widget class="QPushButton" name="button_2d_bgsub">
-            <property name="text">
-             <string>Background subtract</string>
-            </property>
-           </widget>
-          </item>
-          <item row="10" column="1">
-           <widget class="QLineEdit" name="lineedit_2d_savefringes"/>
-          </item>
-          <item row="9" column="1">
-           <widget class="QLineEdit" name="lineedit_2d_saveimage"/>
           </item>
           <item row="0" column="0" colspan="2">
            <widget class="QLabel" name="label_2d_load">
@@ -115,7 +67,7 @@
             </property>
            </widget>
           </item>
-          <item row="7" column="1">
+          <item row="8" column="1">
            <widget class="QComboBox" name="combo_2d_average">
             <item>
              <property name="text">
@@ -144,12 +96,67 @@
             </item>
            </widget>
           </item>
-          <item row="7" column="0">
+          <item row="7" column="0" colspan="2">
+           <widget class="QLabel" name="label_2d_progress">
+            <property name="text">
+             <string>Collapse into 1d</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="0" colspan="2">
+           <widget class="QLabel" name="label_2d_save">
+            <property name="text">
+             <string>Save processed data</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QPushButton" name="button_2d_reset">
+            <property name="text">
+             <string>Reset processing</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="0">
            <widget class="QPushButton" name="button_2d_average">
             <property name="text">
              <string>Method</string>
             </property>
            </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QPushButton" name="button_2d_bgsub">
+            <property name="text">
+             <string>Background subtract</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="lineedit_2d_loadimage"/>
+          </item>
+          <item row="3" column="0" colspan="2">
+           <widget class="QLabel" name="label_2d_process">
+            <property name="text">
+             <string>Process image</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0">
+           <widget class="QPushButton" name="button_2d_badfilter">
+            <property name="text">
+             <string>Filter bad pixels</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QPushButton" name="button_2d_loadbg">
+            <property name="text">
+             <string>Load Background</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLineEdit" name="lineedit_2d_badfilter"/>
           </item>
          </layout>
         </item>
@@ -189,6 +196,15 @@
             </item>
             <item row="0" column="1">
              <widget class="QSlider" name="vslider_2d_processed">
+              <property name="maximum">
+               <number>999</number>
+              </property>
+              <property name="singleStep">
+               <number>1</number>
+              </property>
+              <property name="pageStep">
+               <number>10</number>
+              </property>
               <property name="orientation">
                <enum>Qt::Vertical</enum>
               </property>
@@ -196,6 +212,9 @@
             </item>
             <item row="1" column="0">
              <widget class="QSlider" name="hslider_2d_processed">
+              <property name="maximum">
+               <number>999</number>
+              </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
               </property>
@@ -204,8 +223,11 @@
            </layout>
           </item>
           <item row="1" column="1">
-           <layout class="QGridLayout" name="grid_2d_ft" rowstretch="2,1" columnstretch="1,4">
-            <item row="0" column="0" colspan="2">
+           <layout class="QGridLayout" name="grid_2d_ft" rowstretch="2,1" columnstretch="1,2,2">
+            <item row="1" column="0">
+             <widget class="QDial" name="dial_2d_ft"/>
+            </item>
+            <item row="0" column="0" colspan="3">
              <widget class="QFrame" name="frame_2d_ft">
               <property name="frameShape">
                <enum>QFrame::StyledPanel</enum>
@@ -215,11 +237,15 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="0">
-             <widget class="QDial" name="dial_2d_ft"/>
-            </item>
             <item row="1" column="1">
              <widget class="QDoubleSpinBox" name="dspin_2d_ft"/>
+            </item>
+            <item row="1" column="2">
+             <widget class="QPushButton" name="button_2d_ft">
+              <property name="text">
+               <string>auto</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -251,16 +277,6 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QPushButton" name="button_1d_loadfringes">
-            <property name="text">
-             <string>Load interferogram</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="lineedit_1d_loadfringes"/>
-          </item>
           <item row="2" column="0">
            <widget class="QPushButton" name="button_1d_loadbg">
             <property name="text">
@@ -271,28 +287,62 @@
           <item row="2" column="1">
            <widget class="QLineEdit" name="lineedit_1d_loadbg"/>
           </item>
-          <item row="3" column="0" colspan="2">
-           <widget class="QLabel" name="label_1d_process">
+          <item row="7" column="1">
+           <widget class="QLineEdit" name="lineedit_1d_zeropad"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="button_1d_loadfringes">
             <property name="text">
-             <string>Process Interferogram</string>
+             <string>Load interferogram</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
+          <item row="5" column="0">
            <widget class="QPushButton" name="button_1d_bgsub">
             <property name="text">
              <string>Background subtract</string>
             </property>
            </widget>
           </item>
-          <item row="5" column="0">
+          <item row="10" column="0">
+           <widget class="QPushButton" name="button_1d_ft">
+            <property name="text">
+             <string>Fourier transform</string>
+            </property>
+           </widget>
+          </item>
+          <item row="13" column="1">
+           <widget class="QLineEdit" name="lineedit_1d_savespec"/>
+          </item>
+          <item row="8" column="0">
+           <widget class="QPushButton" name="button_1d_chirp">
+            <property name="text">
+             <string>Remove chirping</string>
+            </property>
+           </widget>
+          </item>
+          <item row="13" column="0">
+           <widget class="QPushButton" name="button_1d_savespec">
+            <property name="text">
+             <string>Save spectrum</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="0" colspan="2">
+           <widget class="QLabel" name="label_1d_progress">
+            <property name="text">
+             <string>Transform into spectrum</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0">
            <widget class="QPushButton" name="button_1d_apodize">
             <property name="text">
              <string>Apodization</string>
             </property>
            </widget>
           </item>
-          <item row="5" column="1">
+          <item row="6" column="1">
            <widget class="QListWidget" name="list_1d_apodize">
             <property name="selectionMode">
              <enum>QAbstractItemView::ExtendedSelection</enum>
@@ -339,63 +389,46 @@
             </item>
            </widget>
           </item>
-          <item row="6" column="0">
-           <widget class="QPushButton" name="button_1d_zeropad">
-            <property name="text">
-             <string>Zero padding</string>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="1">
-           <widget class="QLineEdit" name="lineedit_1d_zeropad"/>
-          </item>
-          <item row="7" column="0">
-           <widget class="QPushButton" name="button_1d_chirp">
-            <property name="text">
-             <string>Remove chirping</string>
-            </property>
-           </widget>
-          </item>
-          <item row="8" column="0" colspan="2">
-           <widget class="QLabel" name="label_1d_progress">
-            <property name="text">
-             <string>Transform into spectrum</string>
-            </property>
-           </widget>
-          </item>
-          <item row="9" column="0">
-           <widget class="QPushButton" name="button_1d_ft">
-            <property name="text">
-             <string>Fourier transform</string>
-            </property>
-           </widget>
-          </item>
-          <item row="10" column="0" colspan="2">
-           <widget class="QLabel" name="label_1d_save">
-            <property name="text">
-             <string>Save processed data</string>
-            </property>
-           </widget>
-          </item>
-          <item row="11" column="0">
+          <item row="12" column="0">
            <widget class="QPushButton" name="button_1d_savefringes">
             <property name="text">
              <string>Save processed interferogram</string>
             </property>
            </widget>
           </item>
-          <item row="11" column="1">
-           <widget class="QLineEdit" name="lineedit_1d_savefringes"/>
-          </item>
-          <item row="12" column="0">
-           <widget class="QPushButton" name="button_1d_savespec">
+          <item row="3" column="0" colspan="2">
+           <widget class="QLabel" name="label_1d_process">
             <property name="text">
-             <string>Save spectrum</string>
+             <string>Process Interferogram</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="lineedit_1d_loadfringes"/>
+          </item>
+          <item row="7" column="0">
+           <widget class="QPushButton" name="button_1d_zeropad">
+            <property name="text">
+             <string>Zero padding</string>
             </property>
            </widget>
           </item>
           <item row="12" column="1">
-           <widget class="QLineEdit" name="lineedit_1d_savespec"/>
+           <widget class="QLineEdit" name="lineedit_1d_savefringes"/>
+          </item>
+          <item row="11" column="0" colspan="2">
+           <widget class="QLabel" name="label_1d_save">
+            <property name="text">
+             <string>Save processed data</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QPushButton" name="button_1d_reset">
+            <property name="text">
+             <string>Reset processing</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
@@ -452,6 +485,43 @@
        <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,2">
         <item>
          <layout class="QGridLayout" name="grid_spec_info">
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="lineedit_spec_loadspec"/>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="lineedit_spec_loadqe"/>
+          </item>
+          <item row="8" column="0" colspan="2">
+           <widget class="QLabel" name="label_spec_save">
+            <property name="text">
+             <string>Save processed data</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="1">
+           <widget class="QLineEdit" name="lineedit_spec_saveff"/>
+          </item>
+          <item row="3" column="0" colspan="2">
+           <widget class="QLabel" name="label_spec_process">
+            <property name="text">
+             <string>Process spectrum</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="0">
+           <widget class="QPushButton" name="button_spec_model">
+            <property name="text">
+             <string>Model</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="0">
+           <widget class="QPushButton" name="button_spec_saveff">
+            <property name="text">
+             <string>Save form factor</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="0" colspan="2">
            <widget class="QLabel" name="label_spec_load">
             <property name="text">
@@ -466,8 +536,15 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="lineedit_spec_loadspec"/>
+          <item row="9" column="0">
+           <widget class="QPushButton" name="button_spec_savespec">
+            <property name="text">
+             <string>Save processed spectrum</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="1">
+           <widget class="QLineEdit" name="lineedit_spec_savespec"/>
           </item>
           <item row="2" column="0">
            <widget class="QPushButton" name="button_spec_loadqe">
@@ -476,38 +553,7 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
-           <widget class="QLineEdit" name="lineedit_spec_loadqe"/>
-          </item>
-          <item row="3" column="0" colspan="2">
-           <widget class="QLabel" name="label_spec_process">
-            <property name="text">
-             <string>Process spectrum</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="0">
-           <widget class="QPushButton" name="button_spec_normqe">
-            <property name="text">
-             <string>Normalise for camera quantum effciency</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="0" colspan="2">
-           <widget class="QLabel" name="label_spec_progress">
-            <property name="text">
-             <string>Normalise into form factor</string>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="0">
-           <widget class="QPushButton" name="button_spec_model">
-            <property name="text">
-             <string>Model</string>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="1">
+          <item row="7" column="1">
            <widget class="QComboBox" name="combo_spec_model">
             <item>
              <property name="text">
@@ -516,32 +562,26 @@
             </item>
            </widget>
           </item>
-          <item row="7" column="0" colspan="2">
-           <widget class="QLabel" name="label_spec_save">
+          <item row="5" column="0">
+           <widget class="QPushButton" name="button_spec_normqe">
             <property name="text">
-             <string>Save processed data</string>
+             <string>Normalise for camera quantum effciency</string>
             </property>
            </widget>
           </item>
-          <item row="8" column="0">
-           <widget class="QPushButton" name="button_spec_savespec">
+          <item row="6" column="0" colspan="2">
+           <widget class="QLabel" name="label_spec_progress">
             <property name="text">
-             <string>Save processed spectrum</string>
+             <string>Normalise into form factor</string>
             </property>
            </widget>
           </item>
-          <item row="8" column="1">
-           <widget class="QLineEdit" name="lineedit_spec_savespec"/>
-          </item>
-          <item row="9" column="0">
-           <widget class="QPushButton" name="button_spec_saveff">
+          <item row="4" column="0">
+           <widget class="QPushButton" name="button_spec_reset">
             <property name="text">
-             <string>Save form factor</string>
+             <string>Reset processing</string>
             </property>
            </widget>
-          </item>
-          <item row="9" column="1">
-           <widget class="QLineEdit" name="lineedit_spec_saveff"/>
           </item>
          </layout>
         </item>
@@ -598,6 +638,27 @@
        <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,2">
         <item>
          <layout class="QGridLayout" name="grid_ff_info">
+          <item row="11" column="0">
+           <widget class="QPushButton" name="button_ff_savephase">
+            <property name="text">
+             <string>Save phase</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="0">
+           <widget class="QPushButton" name="button_ff_saveff">
+            <property name="text">
+             <string>Save processed form factor</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0">
+           <widget class="QPushButton" name="button_ff_kk">
+            <property name="text">
+             <string>Phase retrival method</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="0" colspan="2">
            <widget class="QLabel" name="label_ff_load">
             <property name="text">
@@ -605,15 +666,14 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QPushButton" name="button_ff_loadff">
-            <property name="text">
-             <string>Load form factor</string>
-            </property>
+          <item row="5" column="1">
+           <widget class="QComboBox" name="combo_ff_extrap">
+            <item>
+             <property name="text">
+              <string>nearest neighbour</string>
+             </property>
+            </item>
            </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="lineedit_ff_loadff"/>
           </item>
           <item row="2" column="0" colspan="2">
            <widget class="QLabel" name="label_ff_process">
@@ -622,14 +682,74 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
+          <item row="10" column="1">
+           <widget class="QLineEdit" name="lineedit_ff_saveff"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="button_ff_loadff">
+            <property name="text">
+             <string>Load form factor</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QComboBox" name="combo_ff_kk">
+            <item>
+             <property name="text">
+              <string>Kramers-Kronig</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="4" column="0">
            <widget class="QPushButton" name="button_ff_interp">
             <property name="text">
              <string>Interpolation method</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="1">
+          <item row="7" column="0" colspan="2">
+           <widget class="QLabel" name="label_ff_progress">
+            <property name="text">
+             <string>Transform into bunch profile</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="0">
+           <widget class="QPushButton" name="button_ff_ift">
+            <property name="text">
+             <string>Inverse Fourier Transform</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="0" colspan="2">
+           <widget class="QLabel" name="label_ff_save">
+            <property name="text">
+             <string>Save data</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QPushButton" name="button_ff_extrap">
+            <property name="text">
+             <string>Extrapolation method</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="lineedit_ff_loadff"/>
+          </item>
+          <item row="12" column="0">
+           <widget class="QPushButton" name="button_ff_savebunch">
+            <property name="text">
+             <string>Save bunch profile</string>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="1">
+           <widget class="QLineEdit" name="lineedit_ff_savephase"/>
+          </item>
+          <item row="4" column="1">
            <widget class="QComboBox" name="combo_ff_interp">
             <item>
              <property name="text">
@@ -643,88 +763,15 @@
             </item>
            </widget>
           </item>
-          <item row="4" column="0">
-           <widget class="QPushButton" name="button_ff_extrap">
-            <property name="text">
-             <string>Extrapolation method</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="1">
-           <widget class="QComboBox" name="combo_ff_extrap">
-            <item>
-             <property name="text">
-              <string>nearest neighbour</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item row="5" column="0">
-           <widget class="QPushButton" name="button_ff_kk">
-            <property name="text">
-             <string>Phase retrival method</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="1">
-           <widget class="QComboBox" name="combo_ff_kk">
-            <item>
-             <property name="text">
-              <string>Kramers-Kronig</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item row="6" column="0" colspan="2">
-           <widget class="QLabel" name="label_ff_progress">
-            <property name="text">
-             <string>Transform into bunch profile</string>
-            </property>
-           </widget>
-          </item>
-          <item row="7" column="0">
-           <widget class="QPushButton" name="button_ff_ift">
-            <property name="text">
-             <string>Inverse Fourier Transform</string>
-            </property>
-           </widget>
-          </item>
-          <item row="8" column="0" colspan="2">
-           <widget class="QLabel" name="label_ff_save">
-            <property name="text">
-             <string>Save data</string>
-            </property>
-           </widget>
-          </item>
-          <item row="9" column="0">
-           <widget class="QPushButton" name="button_ff_saveff">
-            <property name="text">
-             <string>Save processed form factor</string>
-            </property>
-           </widget>
-          </item>
-          <item row="9" column="1">
-           <widget class="QLineEdit" name="lineedit_ff_saveff"/>
-          </item>
-          <item row="10" column="0">
-           <widget class="QPushButton" name="button_ff_savephase">
-            <property name="text">
-             <string>Save phase</string>
-            </property>
-           </widget>
-          </item>
-          <item row="10" column="1">
-           <widget class="QLineEdit" name="lineedit_ff_savephase"/>
-          </item>
-          <item row="11" column="0">
-           <widget class="QPushButton" name="button_ff_savebunch">
-            <property name="text">
-             <string>Save bunch profile</string>
-            </property>
-           </widget>
-          </item>
-          <item row="11" column="1">
+          <item row="12" column="1">
            <widget class="QLineEdit" name="lineedit_ff_savebunch"/>
+          </item>
+          <item row="3" column="0">
+           <widget class="QPushButton" name="button_ff_reset">
+            <property name="text">
+             <string>Reset processing</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
@@ -781,10 +828,37 @@
        <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="1,2">
         <item>
          <layout class="QGridLayout" name="grid_bunch_info">
+          <item row="7" column="0">
+           <widget class="QPushButton" name="button_bunch_savebunch">
+            <property name="text">
+             <string>Save processed bunch</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLineEdit" name="lineedit_bunch_savephase"/>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="lineedit_bunch_loadbunch"/>
+          </item>
           <item row="0" column="0" colspan="2">
            <widget class="QLabel" name="label_bunch_load">
             <property name="text">
              <string>Import data</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QPushButton" name="button_bunch_reflect">
+            <property name="text">
+             <string>Reflect bunch</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0" colspan="2">
+           <widget class="QLabel" name="label_bunch_save">
+            <property name="text">
+             <string>Save processed data</string>
             </property>
            </widget>
           </item>
@@ -795,8 +869,15 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="lineedit_bunch_loadbunch"/>
+          <item row="7" column="1">
+           <widget class="QLineEdit" name="lineedit_bunch_savebunch"/>
+          </item>
+          <item row="6" column="0">
+           <widget class="QPushButton" name="button_bunch_savephase">
+            <property name="text">
+             <string>Save processed phase</string>
+            </property>
+           </widget>
           </item>
           <item row="2" column="0" colspan="2">
            <widget class="QLabel" name="label_bunch_process">
@@ -806,38 +887,11 @@
            </widget>
           </item>
           <item row="3" column="0">
-           <widget class="QPushButton" name="button_bunch_reflect">
+           <widget class="QPushButton" name="button_bunch_reset">
             <property name="text">
-             <string>Reflect bunch</string>
+             <string>Reset processing</string>
             </property>
            </widget>
-          </item>
-          <item row="4" column="0" colspan="2">
-           <widget class="QLabel" name="label_bunch_save">
-            <property name="text">
-             <string>Save processed data</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="0">
-           <widget class="QPushButton" name="button_bunch_savephase">
-            <property name="text">
-             <string>Save processed phase</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="1">
-           <widget class="QLineEdit" name="lineedit_bunch_savephase"/>
-          </item>
-          <item row="6" column="0">
-           <widget class="QPushButton" name="button_bunch_savebunch">
-            <property name="text">
-             <string>Save processed bunch</string>
-            </property>
-           </widget>
-          </item>
-          <item row="6" column="1">
-           <widget class="QLineEdit" name="lineedit_bunch_savebunch"/>
           </item>
          </layout>
         </item>

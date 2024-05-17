@@ -45,6 +45,14 @@ def flatten_list(bookshelf): # for when np.ravel() just won't cut it.
             papers += flatten_list(book) #This is a list! Its items must be seperated first, then it can be added to the papers.
     return papers
 
+def is_defined(name, obj=None): # Openai made this for me. Chatgpt4 seems to produce fewer bugs in the code than Chatgpt3. Impressive!
+    if obj is None:
+        # Check in the local and global scope
+        return name in locals() or name in globals()
+    else:
+        # Check as an attribute of the provided object
+        return hasattr(obj, name)
+
 ############FILE ORGANISATION FUNCTIONS#################
 
 def find_fringes_files(colour, number, file_type):
@@ -174,6 +182,29 @@ def pick_centered_interferogram(maximums_offsets, fringes, fringes_processed, fr
         reference, reference_processed, reference_averaged, reference_offset, reference_nofringes = fringes, fringes_processed, fringes_averaged, maximums_offsets, nofringes
 
     return reference, reference_processed, reference_averaged, reference_offset, reference_nofringes
+
+def open_image(file_name): # NEW function for opening an image with the GUI.
+    file_type = file_name[file_name.rfind((".")):]
+
+    common_formats = [".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff"] # these formats are easily understood by PIL.
+    if file_type in common_formats:
+        im = Image.open(file_name)
+        im = im.convert('F') # convert to monochrome format with a bit depth of 32, represented by floating point numbers between 0 and 1.
+        im = np.array(im, dtype= np.float32)
+    elif file_type == ".fts": #although compatable with PIL, .fts files are best handled by astropy
+        hdulist = fits.open(file_name,  ignore_missing_end=True)
+        im = np.array(hdulist[0].data)
+        hdulist.close()
+    elif file_type == ".csv": #best handled by numpy
+        with open(file_name, 'r') as file: #openai did this bit for me. It automatically detects which delimiter to use (pyro uses , xeva uses ;)
+            first_line = file.readline()
+            delimiter = ";" if ";" in first_line else "," #NOT COMPATABLE WITH OTHER DELIMITERS. " " is also a common delimiter.
+        im = np.genfromtxt(file_name, delimiter= delimiter, filling_values= 0)
+    else:
+        raise ValueError("{0:} is not a recognised file type".format(file_type))
+
+    return im
+
 
 ################2D INTERFEROGRAM FUNCTIONS#############
 
