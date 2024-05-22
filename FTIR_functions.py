@@ -187,6 +187,7 @@ def open_image(file_name): # NEW function for opening an image with the GUI.
     file_type = file_name[file_name.rfind((".")):]
 
     common_formats = [".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff"] # these formats are easily understood by PIL.
+
     if file_type in common_formats:
         im = Image.open(file_name)
         im = im.convert('F') # convert to monochrome format with a bit depth of 32, represented by floating point numbers between 0 and 1.
@@ -201,9 +202,36 @@ def open_image(file_name): # NEW function for opening an image with the GUI.
             delimiter = ";" if ";" in first_line else "," #NOT COMPATABLE WITH OTHER DELIMITERS. " " is also a common delimiter.
         im = np.genfromtxt(file_name, delimiter= delimiter, filling_values= 0)
     else:
-        raise ValueError("{0:} is not a recognised file type".format(file_type))
+        raise ValueError("{0:} is not a recognised file type for loading.".format(file_type))
 
     return im
+
+
+def save_image(file_name, array): # NEW function for saveing an image with the GUI.
+    file_type = file_name[file_name.rfind((".")):]
+
+    im = Image.fromarray(array)
+
+    if file_type in [".tif", ".tiff"]: # tiffs accept mode 'F' :) This will create an image with a bit depth of 32
+        im.save(file_name)
+    elif file_type == ".png": # pngs don't accept floats but we can convert the floats to ints. THIS WILL REDUCE THE BIT DEPTH TO 16
+        im = im.convert("I")
+        im.save(file_name)
+    else: # jpegs, bmps and gifs can only be saved as 8bit ints by pillow.
+        raise ValueError("{0:} is not a recognised file type for saving.".format(file_type))
+
+def save_fringes(file_name, array): # NEW function for saveing an image with the GUI. Should combine this with save_image
+    file_type = file_name[file_name.rfind((".")):]
+
+    if file_type == ".txt":
+        np.savetxt(file_name, array) # space delimited. NOT COMPATABLE WITH MY READ FUNCTION!
+    elif file_type == ".csv":
+        np.savetxt(file_name, array, delimiter= ",") # comma delimited
+    elif file_type == ".npy":
+        np.save(file_name, array) # numpy native file type. NOT COMPATABLE WITH MY READ FUNCTION!
+    else:
+        raise ValueError("{0:} is not a recognised file type for saving.".format(file_type))
+
 
 
 ################2D INTERFEROGRAM FUNCTIONS#############

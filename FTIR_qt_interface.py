@@ -54,6 +54,8 @@ class UI(QMainWindow):
         self.vslider_2d_processed.sliderReleased.connect(self.method_2d_collapse)
         self.hslider_2d_processed.sliderReleased.connect(self.method_2d_collapse)
         self.combo_2d_average.currentTextChanged.connect(self.method_2d_collapse)
+        self.button_2d_saveimage.clicked.connect(self.method_2d_saveimage)
+        self.button_2d_savefringes.clicked.connect(self.method_2d_savefringes)
 
     ############################ BUTTONS ##############################
 
@@ -132,6 +134,31 @@ class UI(QMainWindow):
         
         self.plot_2d_fringes()
 
+    def method_2d_saveimage(self):
+        if not FTIR.is_defined('array_2d_processed', self):
+            print("Failed to save processed image. No data to save.")
+            return
+
+        str_image_path, _ = QFileDialog.getSaveFileName(self,"Save File",self.parent_directory,"Image Files (*.png *.tif *.tiff)")
+
+        if str_image_path: # if a file is selected
+            self.lineedit_2d_saveimage.setText(str_image_path)
+            image_path = os.path.normpath(str_image_path)
+            FTIR.save_image(image_path, self.array_2d_processed)
+
+    def method_2d_savefringes(self):
+        if not FTIR.is_defined('array_2d_fringes', self):
+            print("Failed to save processed fringes. No data to save.")
+            return
+
+        str_image_path, _ = QFileDialog.getSaveFileName(self,"Save File",self.parent_directory,"Data Files (*.txt *.csv *.npy)")
+
+        if str_image_path: # if a file is selected
+            self.lineedit_2d_savefringes.setText(str_image_path)
+            image_path = os.path.normpath(str_image_path)
+            FTIR.save_fringes(image_path, self.array_2d_fringes)
+
+
     ############################## PLOTS ###############################
 
     def plot_2d_image(self):
@@ -182,7 +209,7 @@ class UI(QMainWindow):
             return
         
         self.array_2d_ft = np.fft.fft(self.array_2d_processed)
-        self.plot_2d_ft()   
+        self.plot_2d_ft()
 
 
 ### Create instance of the class so that we can execute it.
