@@ -95,7 +95,18 @@ class UI(QMainWindow):
             print("Failed to background subtract. Images have different shapes.")
             return
 
-        self.array_2d_processed -= self.array_2d_bg
+        A = self.array_2d_processed
+        B = self.array_2d_bg
+
+        try:
+            self.array_2d_processed = eval(self.lineedit_2d_bgsub.text())
+        except NameError:
+            print("Failed to background subtract. Equation is invalid.")
+            return
+        
+        if np.any(np.isnan(self.array_2d_processed)):
+            print("WARNING! Nans detected in processed image.")
+
         self.plot_2d_processed() # plot the data
 
     def method_2d_badfilter(self):
@@ -193,7 +204,7 @@ class UI(QMainWindow):
         self.figure_2d_ft.clear() # erase previous plot
         axs = self.figure_2d_ft.subplots() # add axes
         im = axs.imshow(np.abs(np.fft.fftshift(self.array_2d_ft)), extent= (-1,1,-1,1), norm= "log", cmap= "magma_r") # plot image. # ENSURE THAT THE DATA IS DEFINED BEFORE ATTEMPTING TO PLOT IT
-        self.canvas_2d_ft.draw() # instead of fig.show(), we need to update the figure on the canvas.        
+        self.canvas_2d_ft.draw() # Will crash if the ft is all nans. This can happen if there are any nans in the processed data.
 
     def plot_2d_fringes(self):
         self.figure_2d_fringes.clear()
@@ -219,5 +230,3 @@ UIWindow = UI()
 UIWindow.show()
 
 app.exec_()
-
-
