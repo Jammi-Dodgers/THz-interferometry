@@ -55,11 +55,13 @@ class UI(QMainWindow):
         self.button_2d_bgsub.clicked.connect(self.method_2d_bgsub)
         self.button_2d_reset.clicked.connect(self.method_2d_reset)
         self.button_2d_badfilter.clicked.connect(self.method_2d_badfilter)
+        self.button_2d_average.clicked.connect(self.method_2d_collapse)
         self.vslider_2d_processed.sliderReleased.connect(self.method_2d_collapse)
         self.hslider_2d_processed.sliderReleased.connect(self.method_2d_collapse)
         self.combo_2d_average.currentTextChanged.connect(self.method_2d_collapse)
         self.button_2d_saveimage.clicked.connect(self.method_2d_saveimage)
         self.button_2d_savefringes.clicked.connect(self.method_2d_savefringes)
+        self.button_2d_deletebg.clicked.connect(self.method_2d_deletebg)
 
     ############################ BUTTONS ##############################
 
@@ -116,6 +118,16 @@ class UI(QMainWindow):
             print("WARNING! Nans detected in processed image.")
 
         self.plot_2d_processed() # plot the data
+
+    def method_2d_deletebg(self):
+        if len(self.list_2d_bg) == 0:
+            print("Failed to delete backgound. No background to delete!")
+            return
+        
+        del self.list_2d_bg[-1]
+        del self.list_2d_bgpaths[-1]
+        self.ptextedit_2d_loadbg.setPlainText("\n".join(self.list_2d_bgpaths)) # update the list of loaded background files.
+        self.plot_2d_bg() # update the plots
 
     def method_2d_badfilter(self):
         if not FTIR.is_defined('array_2d_processed', self):
@@ -189,7 +201,7 @@ class UI(QMainWindow):
 
     def plot_2d_bg(self):
         self.figure_2d_bg.clear() # erase previous plot
-        axs = self.figure_2d_bg.subplots(1, len(self.list_2d_bg)) # add axes
+        axs = self.figure_2d_bg.subplots(1, len(self.list_2d_bg) or 1) # add axes. Defult to 1 axes if all backgrounds have been removed.
         axs = np.atleast_1d(axs) # make into an array if not an array already
         for ax, background, label in zip(axs, self.list_2d_bg, FTIR.ALPHABET[1:]):
             ax.imshow(background) # plot image. # ENSURE THAT THE DATA IS DEFINED BEFORE ATTEMPTING TO PLOT IT
