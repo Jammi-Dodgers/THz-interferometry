@@ -17,6 +17,10 @@ class UI(QMainWindow):
         self.parent_directory = os.path.dirname(__file__)
         loadUi(os.path.join(self.parent_directory, "FTIR_qt_interface.ui"),self) # Using a relative path (ie. loadUi("FTIR_qt_interface.ui",self)) doesn't work because the current working directory has changed. IDK why it changed.
 
+        ### initialise other variables
+        self.list_2d_bg = []
+        self.list_2d_bgpaths = []
+
         ### define figures
         self.figure_2d_image = plt.figure()
         self.figure_2d_bg = plt.figure()
@@ -74,9 +78,12 @@ class UI(QMainWindow):
         str_image_path, _ = QFileDialog.getOpenFileName(self, "Load Background Image", self.parent_directory, "Image Files (*.png *.jpg *.jpeg *.bmp *.gif *.tif *.tiff *.csv *.fts)") # allow common image files as well as .csv and .fts. These cover all of the cameras that I've tested so far.
 
         if str_image_path: # if a file is selected
-            self.lineedit_2d_loadbg.setText(str_image_path)
+            self.list_2d_bgpaths.append(str_image_path)
+            self.ptextedit_2d_loadbg.setPlainText("\n".join(self.list_2d_bgpaths))
+
             image_path = os.path.normpath(str_image_path)
-            self.array_2d_bg = FTIR.open_image(image_path)
+            background_array = FTIR.open_image(image_path)
+            self.list_2d_bg.append(background_array)
             self.plot_2d_bg() # now that the data is defined. we can plot it. :)
 
     def method_2d_reset(self):
@@ -88,20 +95,21 @@ class UI(QMainWindow):
         self.plot_2d_processed() # plot the data
 
     def method_2d_bgsub(self):
-        if not FTIR.is_defined("array_2d_processed", self) or not FTIR.is_defined("array_2d_bg", self):
-            print("Failed to background subtract. At least one image is missing.")
-            return
-        elif self.array_2d_processed.shape != self.array_2d_bg.shape: # If images are not the same shape
-            print("Failed to background subtract. Images have different shapes.")
-            return
+        equation = self.lineedit_2d_bgsub.text() 
+        symbols = {char for char in equation if char.isupper()} # SET COMPREHENTION
+        bg_indexes = [FTIR.ALPHABET.index(symbol) -1 for symbol in symbols]
 
-        A = self.array_2d_processed
-        B = self.array_2d_bg
+        equation = equation.replace("A", "self.array_2d_image")
+        for symbol, bg_index in zip(symbols, bg_indexes):
+            equation = equation.replace(symbol, "self.list_2d_bg[{0:d}]".format(bg_index))
 
         try:
-            self.array_2d_processed = eval(self.lineedit_2d_bgsub.text())
+            self.array_2d_processed = eval(equation)
         except NameError:
             print("Failed to background subtract. Equation is invalid.")
+            return
+        except IndexError:
+            print("Failed to background subtract. At least one image is missing.")
             return
         
         if np.any(np.isnan(self.array_2d_processed)):
@@ -175,13 +183,17 @@ class UI(QMainWindow):
     def plot_2d_image(self):
         self.figure_2d_image.clear() # erase previous plot
         axs = self.figure_2d_image.subplots() # add axes
-        im = axs.imshow(self.array_2d_image) # plot image. # ENSURE THAT THE DATA IS DEFINED BEFORE ATTEMPTING TO PLOT IT
+        axs.imshow(self.array_2d_image) # plot image. # ENSURE THAT THE DATA IS DEFINED BEFORE ATTEMPTING TO PLOT IT
+        axs.set(title= "A")
         self.canvas_2d_image.draw() # instead of fig.show(), we need to update the figure on the canvas.
 
     def plot_2d_bg(self):
         self.figure_2d_bg.clear() # erase previous plot
-        axs = self.figure_2d_bg.subplots() # add axes
-        im = axs.imshow(self.array_2d_bg) # plot image. # ENSURE THAT THE DATA IS DEFINED BEFORE ATTEMPTING TO PLOT IT
+        axs = self.figure_2d_bg.subplots(1, len(self.list_2d_bg)) # add axes
+        axs = np.atleast_1d(axs) # make into an array if not an array already
+        for ax, background, label in zip(axs, self.list_2d_bg, FTIR.ALPHABET[1:]):
+            ax.imshow(background) # plot image. # ENSURE THAT THE DATA IS DEFINED BEFORE ATTEMPTING TO PLOT IT
+            ax.set(title= label)
         self.canvas_2d_bg.draw() # instead of fig.show(), we need to update the figure on the canvas.
 
     def plot_2d_processed(self):

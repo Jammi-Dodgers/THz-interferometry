@@ -1,11 +1,15 @@
 import numpy as np
 from PIL import Image
 import pandas as pd
-import os, re
+import os, re, string
 from scipy import interpolate as spinter, signal as spsig, optimize as spopt, constants as spcon #scipy has a lot of submodules
 from astropy.io import fits
 
+####################CONSTANTS####################
+
 C = spcon.speed_of_light
+alphabet = list(string.ascii_lowercase)
+ALPHABET = list(string.ascii_uppercase)
 
 ##############GENERIC AND BASIC FUNCTIONS##############
 
