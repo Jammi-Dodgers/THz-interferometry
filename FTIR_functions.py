@@ -8,7 +8,7 @@ from astropy.io import fits
 ####################CONSTANTS####################
 
 C = spcon.speed_of_light
-alphabet = list(string.ascii_lowercase)
+alphabet = list(string.ascii_lowercase) # truely essential to FTIR processing.
 ALPHABET = list(string.ascii_uppercase)
 
 ##############GENERIC AND BASIC FUNCTIONS##############
