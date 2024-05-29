@@ -642,3 +642,42 @@ def kramers_kronig(omega, rho): # omega is the angular frequency. rho is the abs
         summation += integrand *dx
 
     return 2/np.pi *summation #phase
+
+def gerchberg_saxon(rho, sensitivity_mask= None, initial_guess= None, iterations= 10000, tolerance= 0.01, beta= 1): #rho is the absolute part of the spectrum. The Gerchberg-Saxon algorithm is not analytical unlike Kramers-Kronig.
+    
+    if initial_guess is None:
+        array_length = 2*(len(rho) -1)
+        initial_guess = np.zeros(array_length, dtype= np.float64)
+    else:
+        array_length = len(initial_guess)
+
+    if sensitivity_mask is None: sensitivity_mask = np.full_like(rho, True, dtype= bool)
+
+    #initialise loop
+    IFFT0 = initial_guess # DO NOT COPY. np.copy, copy.copy and copy.deepcopy inexplicably break the Gerchberg-Saxon algorithm
+    is_causal = np.zeros(array_length, dtype=bool)
+
+    #begin loop
+    for n in range(iterations):
+
+        FT0 = np.fft.rfft(initial_guess)
+
+        ## FOURIER DOMAIN CONSTRAINT
+        phase = np.angle(FT0)
+        FT1 = FT0
+        FT1[sensitivity_mask] = rho[sensitivity_mask] *np.exp(1j *phase[sensitivity_mask])
+
+        IFFT1 = np.fft.irfft(FT1, n= array_length)
+
+        ## SUPPORT CONSTRAINT
+        is_positive = np.angle(IFFT1) < tolerance
+        #violates_constraint = np.logical_not(is_positive)
+        is_causal[:array_length//2] = True
+        is_causal[array_length//2:] = np.abs(IFFT1[array_length//2:]) < tolerance*np.max(np.abs(IFFT1[array_length//2:]))
+        violates_constraint = np.logical_not(np.logical_and(is_positive, is_causal))
+
+        ## Fienup's application of the support constraint
+        IFFT0[~violates_constraint] = IFFT1[~violates_constraint]
+        IFFT0[violates_constraint] = IFFT0[violates_constraint] -beta*IFFT1[violates_constraint]
+
+    return FT1 #complex form factor #np.angle(FT1) #phase
