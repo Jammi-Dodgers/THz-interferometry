@@ -643,7 +643,7 @@ def kramers_kronig(omega, rho): # omega is the angular frequency. rho is the abs
 
     return 2/np.pi *summation #phase
 
-def gerchberg_saxon(rho, sensitivity_mask= None, initial_guess= None, iterations= 10000, tolerance= 0.01, beta= 1): #rho is the absolute part of the spectrum. The Gerchberg-Saxon algorithm is not analytical unlike Kramers-Kronig.
+def gerchberg_saxon(rho, sensitivity_mask= None, initial_guess= None, iterations= 10000, tolerance= 0.01): #rho is the absolute part of the spectrum. The Gerchberg-Saxon algorithm is not analytical unlike Kramers-Kronig.
     
     if initial_guess is None:
         array_length = 2*(len(rho) -1)
@@ -654,13 +654,12 @@ def gerchberg_saxon(rho, sensitivity_mask= None, initial_guess= None, iterations
     if sensitivity_mask is None: sensitivity_mask = np.full_like(rho, True, dtype= bool)
 
     #initialise loop
-    IFFT0 = initial_guess # DO NOT COPY. np.copy, copy.copy and copy.deepcopy inexplicably break the Gerchberg-Saxon algorithm
-    is_causal = np.zeros(array_length, dtype=bool)
+    IFFT0 = np.copy(initial_guess)
 
     #begin loop
     for n in range(iterations):
 
-        FT0 = np.fft.rfft(initial_guess)
+        FT0 = np.fft.rfft(IFFT0)
 
         ## FOURIER DOMAIN CONSTRAINT
         phase = np.angle(FT0)
@@ -670,14 +669,15 @@ def gerchberg_saxon(rho, sensitivity_mask= None, initial_guess= None, iterations
         IFFT1 = np.fft.irfft(FT1, n= array_length)
 
         ## SUPPORT CONSTRAINT
-        is_positive = np.angle(IFFT1) < tolerance
-        #violates_constraint = np.logical_not(is_positive)
-        is_causal[:array_length//2] = True
-        is_causal[array_length//2:] = np.abs(IFFT1[array_length//2:]) < tolerance*np.max(np.abs(IFFT1[array_length//2:]))
+        is_positive = IFFT1 >= 0
+        violates_constraint = np.logical_not(is_positive)
+        is_causal = np.full(array_length, True, dtype= bool)
+        is_causal[array_length//2:] = IFFT1[array_length//2:] < tolerance*np.max(IFFT1[array_length//2:])
         violates_constraint = np.logical_not(np.logical_and(is_positive, is_causal))
 
         ## Fienup's application of the support constraint
         IFFT0[~violates_constraint] = IFFT1[~violates_constraint]
-        IFFT0[violates_constraint] = IFFT0[violates_constraint] -beta*IFFT1[violates_constraint]
+        #IFFT0[violates_constraint] = IFFT0[violates_constraint] -IFFT1[violates_constraint]
+        IFFT0[violates_constraint] = (IFFT0[violates_constraint] +IFFT1[violates_constraint]) /2
 
     return FT1 #complex form factor #np.angle(FT1) #phase
