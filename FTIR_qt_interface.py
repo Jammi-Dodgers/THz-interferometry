@@ -59,9 +59,12 @@ class UI(QMainWindow):
         self.vslider_2d_processed.sliderReleased.connect(self.method_2d_collapse)
         self.hslider_2d_processed.sliderReleased.connect(self.method_2d_collapse)
         self.combo_2d_average.currentTextChanged.connect(self.method_2d_collapse)
+        self.dspin_2d_ft.valueChanged.connect(self.update_2d_dspin)
+        self.dial_2d_ft.sliderReleased.connect(self.update_2d_dial)
         self.button_2d_saveimage.clicked.connect(self.method_2d_saveimage)
         self.button_2d_savefringes.clicked.connect(self.method_2d_savefringes)
         self.button_2d_deletebg.clicked.connect(self.method_2d_deletebg)
+        self.button_2d_ft.clicked.connect(self.method_2d_auto)
 
     ############################ BUTTONS ##############################
 
@@ -149,19 +152,22 @@ class UI(QMainWindow):
         
         self.plot_2d_processed() # plot the data
 
-        if self.combo_2d_average.currentText() == "Slice row":
-            row_number = int(self.array_2d_processed.shape[0] *self.float_2d_vslider)
-            self.array_2d_fringes = self.array_2d_processed[row_number,:]
-        elif self.combo_2d_average.currentText() == "Slice column":
-            column_number = int(self.array_2d_processed.shape[1] *self.float_2d_hslider)
-            self.array_2d_fringes = self.array_2d_processed[:,column_number]
-        elif self.combo_2d_average.currentText() == "Average rows":
-            self.array_2d_fringes = np.mean(self.array_2d_processed, axis= 0)
-        elif self.combo_2d_average.currentText() == "Average columns":
-            self.array_2d_fringes = np.mean(self.array_2d_processed, axis= 1)
-        else:
-            print("Failed to collapse to 1d. The method '{0:}' was not understood".format(self.combo_2d_average.currentText()))
-            return
+        match self.combo_2d_average.currentText():
+            case "Slice row":
+                row_number = int(self.array_2d_processed.shape[0] *self.float_2d_vslider)
+                self.array_2d_fringes = self.array_2d_processed[row_number,:]
+            case "Slice column":
+                column_number = int(self.array_2d_processed.shape[1] *self.float_2d_hslider)
+                self.array_2d_fringes = self.array_2d_processed[:,column_number]
+            case "Average rows":
+                self.array_2d_fringes = np.mean(self.array_2d_processed, axis= 0)
+            case "Average columns":
+                self.array_2d_fringes = np.mean(self.array_2d_processed, axis= 1)
+            case "Filter by angle (experimental)":
+                r, self.array_2d_fringes, FT1d = FTIR.slice_2d(self.array_2d_processed, self.dspin_2d_ft.value())
+            case _:
+                print("Failed to collapse to 1d. The method '{0:}' was not understood".format(self.combo_2d_average.currentText()))
+                return
         
         self.plot_2d_fringes()
 
@@ -188,6 +194,25 @@ class UI(QMainWindow):
             self.lineedit_2d_savefringes.setText(str_image_path)
             image_path = os.path.normpath(str_image_path)
             FTIR.save_fringes(image_path, self.array_2d_fringes)
+
+    def method_2d_auto(self):
+        alpha = FTIR.find_alpha(self.array_2d_processed)
+        self.dspin_2d_ft.setValue(alpha)
+        self.method_2d_collapse()
+
+    def update_2d_dial(self):
+        alpha = -np.pi/10800 * self.dial_2d_ft.value() # The dial value is an interger in arcminutes, displaced by -pi/2 and clockwise instead of anticlockwise. It's a pain but this formula should work.
+        alpha = (alpha + np.pi) % (2 * np.pi) - np.pi # wrap between -pi and pi
+        self.dspin_2d_ft.setValue(alpha)
+        self.method_2d_collapse()
+        
+
+    def update_2d_dspin(self):
+        alpha = -10800/np.pi * self.dspin_2d_ft.value() # the dspin value is in radians (as it should be). Need to convert it to arcminues.
+        if alpha > 5400: alpha -= 21600 # wrap between -270°00' and 90°00'
+        self.dial_2d_ft.setValue(round(alpha))
+        self.method_2d_collapse()
+        
 
 
     ############################## PLOTS ###############################
@@ -228,6 +253,12 @@ class UI(QMainWindow):
         self.figure_2d_ft.clear() # erase previous plot
         axs = self.figure_2d_ft.subplots() # add axes
         im = axs.imshow(np.abs(np.fft.fftshift(self.array_2d_ft)), extent= (-1,1,-1,1), norm= "log", cmap= "magma_r") # plot image. # ENSURE THAT THE DATA IS DEFINED BEFORE ATTEMPTING TO PLOT IT
+
+        if self.combo_2d_average.currentText() == "Filter by angle (experimental)":
+            x_intercepts, y_intercepts, _ = FTIR.bounding_box((-1, 1), (-1, 1), (0, 0), np.tan(self.dspin_2d_ft.value()))
+            axs.plot(x_intercepts, y_intercepts)
+
+
         self.canvas_2d_ft.draw() # Will crash if the ft is all nans. This can happen if there are any nans in the processed data.
 
     def plot_2d_fringes(self):

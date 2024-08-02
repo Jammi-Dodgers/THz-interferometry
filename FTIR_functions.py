@@ -190,7 +190,7 @@ def pick_centered_interferogram(maximums_offsets, fringes, fringes_processed, fr
 def open_image(file_name): # NEW function for opening an image with the GUI.
     file_type = file_name[file_name.rfind((".")):]
 
-    common_formats = [".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff"] # these formats are easily understood by PIL.
+    common_formats = [".png", ".jpg", ".jpeg", ".bmp", ".BMP", ".gif", ".tif", ".tiff"] # these formats are easily understood by PIL.
 
     if file_type in common_formats:
         im = Image.open(file_name)
@@ -643,7 +643,7 @@ def kramers_kronig(omega, rho): # omega is the angular frequency. rho is the abs
 
     return 2/np.pi *summation #phase
 
-def gerchberg_saxon(rho, sensitivity_mask= None, initial_guess= None, iterations= 10000, tolerance= 0.01): #rho is the absolute part of the spectrum. The Gerchberg-Saxon algorithm is not analytical unlike Kramers-Kronig.
+def gerchberg_saxon(rho, sensitivity_mask= None, initial_guess= None, iterations= 10000, tolerance= 0.1, beta= 1, gamma= 0.95): #rho is the absolute part of the spectrum. The Gerchberg-Saxon algorithm is not analytical unlike Kramers-Kronig.
     
     if initial_guess is None:
         array_length = 2*(len(rho) -1)
@@ -663,21 +663,23 @@ def gerchberg_saxon(rho, sensitivity_mask= None, initial_guess= None, iterations
 
         ## FOURIER DOMAIN CONSTRAINT
         phase = np.angle(FT0)
-        FT1 = FT0
+        FT1 = np.copy(FT0)
         FT1[sensitivity_mask] = rho[sensitivity_mask] *np.exp(1j *phase[sensitivity_mask])
+        complex_form_factor = np.copy(FT1) # OUTPUT OF ALGORITHM IS HERE
+        FT1[~sensitivity_mask] *= gamma # suppress unknown frequencies. The gerchberg-saxon algorithm's biggest strength and weakness is how it can guess unknown frequencies. This often leads to a lot of noise. Because we are expecting a gaussian bunch, it may be better to multiply by a half gaussian.
 
         IFFT1 = np.fft.irfft(FT1, n= array_length)
 
         ## SUPPORT CONSTRAINT
-        is_positive = IFFT1 >= 0
-        violates_constraint = np.logical_not(is_positive)
+        is_positive = IFFT1 >= tolerance*np.min(IFFT1[array_length//2:])
         is_causal = np.full(array_length, True, dtype= bool)
         is_causal[array_length//2:] = IFFT1[array_length//2:] < tolerance*np.max(IFFT1[array_length//2:])
         violates_constraint = np.logical_not(np.logical_and(is_positive, is_causal))
+        #violates_constraint = np.logical_not(is_causal)
 
-        ## Fienup's application of the support constraint
+        ## apply the support constraint
         IFFT0[~violates_constraint] = IFFT1[~violates_constraint]
-        #IFFT0[violates_constraint] = IFFT0[violates_constraint] -IFFT1[violates_constraint]
-        IFFT0[violates_constraint] = (IFFT0[violates_constraint] +IFFT1[violates_constraint]) /2
+        IFFT0[violates_constraint] = IFFT0[violates_constraint] -beta*IFFT1[violates_constraint] # Fienup's application of the support constraint
+        #IFFT0[violates_constraint] = (IFFT0[violates_constraint] +IFFT1[violates_constraint]) /2 # this scheme converges well but often gets stuck in a local minima
 
-    return FT1 #complex form factor #np.angle(FT1) #phase
+    return complex_form_factor #complex form factor #np.angle(FT1) #phase

@@ -258,7 +258,29 @@
           <item row="1" column="1">
            <layout class="QGridLayout" name="grid_2d_ft" rowstretch="2,1" columnstretch="1,2,2">
             <item row="1" column="0">
-             <widget class="QDial" name="dial_2d_ft"/>
+             <widget class="QDial" name="dial_2d_ft">
+              <property name="minimum">
+               <number>-16200</number>
+              </property>
+              <property name="maximum">
+               <number>5400</number>
+              </property>
+              <property name="value">
+               <number>0</number>
+              </property>
+              <property name="sliderPosition">
+               <number>0</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="wrapping">
+               <bool>true</bool>
+              </property>
+              <property name="notchesVisible">
+               <bool>false</bool>
+              </property>
+             </widget>
             </item>
             <item row="0" column="0" colspan="3">
              <widget class="QFrame" name="frame_2d_ft">
@@ -271,7 +293,26 @@
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="QDoubleSpinBox" name="dspin_2d_ft"/>
+             <widget class="QDoubleSpinBox" name="dspin_2d_ft">
+              <property name="wrapping">
+               <bool>true</bool>
+              </property>
+              <property name="suffix">
+               <string> rad</string>
+              </property>
+              <property name="decimals">
+               <number>4</number>
+              </property>
+              <property name="minimum">
+               <double>-3.141600000000000</double>
+              </property>
+              <property name="maximum">
+               <double>3.141600000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.010000000000000</double>
+              </property>
+             </widget>
             </item>
             <item row="1" column="2">
              <widget class="QPushButton" name="button_2d_ft">
